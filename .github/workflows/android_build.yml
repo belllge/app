@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Fix for the Node.js 24 deprecation warning
+# Fix for the Node.js 24 deprecation warning seen in logs
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -25,19 +25,20 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    # This step will try to generate the wrapper if it's missing
-    - name: Ensure Gradle Wrapper exists
+    - name: Grant execute permission for gradlew
       run: |
-        if [ ! -f "gradlew" ]; then
-          gradle wrapper
+        if [ -f "gradlew" ]; then
+          chmod +x gradlew
+        elif [ -f "ugx_converter_pro_project/gradlew" ]; then
+          chmod +x ugx_converter_pro_project/gradlew
         fi
-        chmod +x gradlew
 
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug || ./ugx_converter_pro_project/gradlew assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: UGX-Travel-Converter-Debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        # Using wildcards to find the APK wherever it was built
+        path: "**/build/outputs/apk/debug/*.apk"
